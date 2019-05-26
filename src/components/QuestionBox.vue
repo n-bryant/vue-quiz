@@ -26,7 +26,13 @@
       >
         Submit
       </b-button>
-      <b-button @click="next" variant="success" href="#">Next Question</b-button>
+      <b-button
+        @click="next"
+        variant="success"
+        :disabled="!hasGuessed"
+      >
+        Next Question
+      </b-button>
     </b-jumbotron>
   </div>
 </template>
