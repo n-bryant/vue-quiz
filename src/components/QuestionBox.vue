@@ -12,11 +12,13 @@
           v-for="(answer, index) in shuffledAnswers"
           :key="answer"
           @click="selectAnswer(index)"
-          :class="[selectedIndex === index ? 'selected' : '']"
+          :class="getAnswerClass(index)"
+          :disabled="hasGuessed"
         >
           {{ answer }}
         </b-list-group-item>
       </b-list-group>
+
       <b-button
         variant="primary"
         :disabled="selectedIndex === null || hasGuessed"
@@ -90,12 +92,35 @@
         this.correctIndex = this.shuffledAnswers.findIndex(answer => answer === unescape(this.currentQuestion.correct_answer));
       },
       /**
+       * Set class names for the answer item based on guess status
+       * @param {int} index - the index of the answer item
+       * returns string
+       */
+      getAnswerClass(index) {
+        let answerClass = "";
+        
+        if (!this.hasGuessed && this.selectedIndex === index) {
+          // set class to 'selected' for this answer if a user hasn't guessed yet
+          answerClass = "selected";
+        } else if (this.hasGuessed && this.correctIndex === index) {
+          // set class to 'correct' for this answer if it is the correct answer
+          answerClass = "correct";
+        } else if (
+            this.hasGuessed && this.correctIndex !== index  && this.selectedIndex === index
+          ) {
+          // set class to 'incorrect' for this answer if it is not the correct answer
+          answerClass = "incorrect";
+        }
+
+        return answerClass;
+      },
+      /**
        * Handles the submission of an answer
        */
       submitAnswer() {
         // store whether the selected answer is correct
         let isCorrect = false;
-        if(this.selectedIndex === this.correctIndex) {
+        if (this.selectedIndex === this.correctIndex) {
           isCorrect = true;
         }
         // denote that the user has submitted a guess for the question
@@ -116,6 +141,7 @@
   }
   .list-group-item:hover {
     background: #e9ecef;
+    color: #2c3e50;
   }
   .btn {
     margin: 0 .25rem;
@@ -128,7 +154,8 @@
     color: #fff;
   }
   .correct {
-    background: green;
+    background: #28a745;
+    color: #fff;
   }
   .incorrect {
     background: red;
