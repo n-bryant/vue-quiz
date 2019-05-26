@@ -1,6 +1,9 @@
 <template>
   <div id="app">
-    <Header />
+    <Header
+      :correctGuesses="correctGuesses"
+      :totalGuesses="totalGuesses"
+    />
     <b-container class="main-container">
       <b-row>
         <b-col sm="6" offset="3">
@@ -8,6 +11,7 @@
             v-if="questions.length"
             :currentQuestion="questions[index]"
             :next="next"
+            :incrementGuesses="incrementGuesses"
           />
         </b-col>
       </b-row>
@@ -16,6 +20,8 @@
 </template>
 
 <script>
+import { unescape } from "lodash";
+
 import Header from './components/Header.vue';
 import QuestionBox from './components/QuestionBox.vue';
 
@@ -29,16 +35,36 @@ export default {
   },
   data() {
     return {
+      // list of questions
       questions: [],
-      index: 0
+      // current question index
+      index: 0,
+      // count of correct answers
+      correctGuesses: 0,
+      // count of total guesses
+      totalGuesses: 0
     }
   },
   methods: {
+    /**
+     * Set the current question index to the next index
+     */
     next() {
       this.index++;
+    },
+    /**
+     * Increments the user's total guesses and correct guesses
+     * @param {boolean} isCorrect - whether the submitted answer is correct
+     */
+    incrementGuesses(isCorrect) {
+      if (isCorrect) {
+        this.correctGuesses++;
+      }
+      this.totalGuesses++;
     }
   },
   mounted() {
+    // Retrieve questions from opentdb
     fetch(QUESTIONS_API_ENDPOINT, {
       method: "get"
     })
@@ -46,7 +72,16 @@ export default {
       return response.json();
     })
     .then((jsonData) => {
-      this.questions = jsonData.results;
+      // opentdb provides question text as html entity encoded strings,
+      // so we decode the question text before setting the results into state
+      const decodedQuestions = jsonData.results.map(result => (
+        {
+          ...result,
+          question: unescape(result.question)
+        }
+      ));
+      // set decoded questions into state
+      this.questions = decodedQuestions;
     })
   }
 }

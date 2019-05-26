@@ -9,7 +9,7 @@
 
       <b-list-group>
         <b-list-group-item
-          v-for="(answer, index) in answers"
+          v-for="(answer, index) in shuffledAnswers"
           :key="answer"
           @click="selectAnswer(index)"
           :class="[selectedIndex === index ? 'selected' : '']"
@@ -17,53 +17,91 @@
           {{ answer }}
         </b-list-group-item>
       </b-list-group>
-      <b-button variant="primary" href="#">Submit</b-button>
+      <b-button
+        variant="primary"
+        :disabled="selectedIndex === null || hasGuessed"
+        @click="submitAnswer"
+      >
+        Submit
+      </b-button>
       <b-button @click="next" variant="success" href="#">Next Question</b-button>
     </b-jumbotron>
   </div>
 </template>
 
 <script>
-  import _ from "lodash";
+  import { shuffle, unescape } from "lodash";
 
   export default {
     props: {
+      // an object containing data for the current question
       currentQuestion: Object,
-      next: Function
+      // handler for proceeding to the next question
+      next: Function,
+      // handler for incrementing guess counts
+      incrementGuesses: Function
     },
     data() {
       return {
+        // the index of the currently selected answer
         selectedIndex: null,
-        shuffledAnswers: []
+        // a shuffled array of answers
+        shuffledAnswers: [],
+        // the index of the correct answer
+        correctIndex: null,
+        // whether the user has submitted a guess
+        hasGuessed: false
       }
     },
-    computed: {
-      answers() {
-        let answers = [...this.currentQuestion.incorrect_answers];
-        answers.push(this.currentQuestion.correct_answer);
-        return answers;
-      }
-    },
-    // watch changes for props and run provided method on change for that prop
+    // watch changes for props and run provided method(s) on change for that prop
     watch: {
       currentQuestion: {
+        // call the handler upon initial receipt of the currentQuestion prop
         immediate: true,
+        /**
+         * Clear the selection and shuffle the answers for the current question
+         */
         handler() {
           // clear selection when the question is changed
           this.selectedIndex = null;
+          // clear the guess status
+          this.hasGuessed = false;
           // shuffle answers
           this.shuffleAnswers();
         }
       }
     },
     methods: {
-      async selectAnswer(index) {
+      /**
+       * Updates the selectedIndex value to the index of the user's currently selected answer
+       * @param {int} index - the index of the selected answer
+       */
+      selectAnswer(index) {
         this.selectedIndex = index;
-        await this.$nextTick();
       },
+      /**
+       * Sets shuffledAnswers to a shuffled array of answers created from the list of incorrect answers and the correct answer
+       */
       shuffleAnswers() {
-        let answers = [...this.currentQuestion.incorrect_answers, this.currentQuestion.correct_answer];
-        this.shuffledAnswers = _.shuffle(answers);
+        const answers = [...this.currentQuestion.incorrect_answers, this.currentQuestion.correct_answer];
+        // answers are provided as html entity encoded strings from opentdb, so we decode them here
+        const decodedAnswers = answers.map(answer => unescape(answer));
+        this.shuffledAnswers = shuffle(decodedAnswers);
+        this.correctIndex = this.shuffledAnswers.findIndex(answer => answer === unescape(this.currentQuestion.correct_answer));
+      },
+      /**
+       * Handles the submission of an answer
+       */
+      submitAnswer() {
+        // store whether the selected answer is correct
+        let isCorrect = false;
+        if(this.selectedIndex === this.correctIndex) {
+          isCorrect = true;
+        }
+        // denote that the user has submitted a guess for the question
+        this.hasGuessed = true;
+        // update guess counts
+        this.incrementGuesses(isCorrect);
       }
     }
   }
@@ -81,6 +119,9 @@
   }
   .btn {
     margin: 0 .25rem;
+  }
+  .btn:disabled {
+    cursor: not-allowed;
   }
   .selected, .selected:hover {
     background: #007bff;
