@@ -46,14 +46,14 @@
     },
     // watch changes for props and run provided method on change for that prop
     watch: {
-      // currentQuestion() {
-      //   // clear selection when the question is changed
-      //   this.selectedIndex = null;
-      //   // shuffle answers
-      //   this.shuffleAnswers();
-      // }
       currentQuestion: {
-        
+        immediate: true,
+        handler() {
+          // clear selection when the question is changed
+          this.selectedIndex = null;
+          // shuffle answers
+          this.shuffleAnswers();
+        }
       }
     },
     methods: {
