@@ -44,7 +44,9 @@
   export default {
     props: {
       // an object containing data for the current question
-      currentQuestion: Object
+      currentQuestion: Object,
+      // whether the question is the final question
+      isFinalQuestion: Boolean
     },
     data() {
       return {
@@ -142,6 +144,9 @@
        * Request next question
        */
       getNextQuestion() {
+        if (this.isFinalQuestion) {
+          this.setQuizCompleted();
+        }
         this.$emit("next-question");
       },
       /**

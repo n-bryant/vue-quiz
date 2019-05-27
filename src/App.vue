@@ -13,6 +13,7 @@
             @increment-guesses="updateGuesses"
             @set-quiz-completed="setQuizCompleted"
             :currentQuestion="questions[index]"
+            :isFinalQuestion="index === questions.length - 1"
           />
           <CompletedView
             v-if="questions.length && isQuizComplete"
@@ -79,6 +80,12 @@ export default {
      */
     setQuizCompleted(status) {
       this.isQuizComplete = status;
+      // reset game state
+      if (status === false) {
+        this.index = 0;
+        this.correctGuesses = 0;
+        this.totalGuesses = 0;
+      }
     }
   },
   mounted() {
