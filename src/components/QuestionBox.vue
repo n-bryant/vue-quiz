@@ -27,7 +27,7 @@
         Submit
       </b-button>
       <b-button
-        @click="next"
+        @click="getNextQuestion"
         variant="success"
         :disabled="!hasGuessed"
       >
@@ -38,16 +38,13 @@
 </template>
 
 <script>
-  import { shuffle, unescape } from "lodash";
+  import { shuffle } from "lodash";
+  import he from "he";
 
   export default {
     props: {
       // an object containing data for the current question
-      currentQuestion: Object,
-      // handler for proceeding to the next question
-      next: Function,
-      // handler for incrementing guess counts
-      incrementGuesses: Function
+      currentQuestion: Object
     },
     data() {
       return {
@@ -93,9 +90,9 @@
       shuffleAnswers() {
         const answers = [...this.currentQuestion.incorrect_answers, this.currentQuestion.correct_answer];
         // answers are provided as html entity encoded strings from opentdb, so we decode them here
-        const decodedAnswers = answers.map(answer => unescape(answer));
+        const decodedAnswers = answers.map(answer => he.unescape(answer));
         this.shuffledAnswers = shuffle(decodedAnswers);
-        this.correctIndex = this.shuffledAnswers.findIndex(answer => answer === unescape(this.currentQuestion.correct_answer));
+        this.correctIndex = this.shuffledAnswers.findIndex(answer => answer === he.unescape(this.currentQuestion.correct_answer));
       },
       /**
        * Set class names for the answer item based on guess status
@@ -133,6 +130,25 @@
         this.hasGuessed = true;
         // update guess counts
         this.incrementGuesses(isCorrect);
+      },
+      /**
+       * Emit guess update
+       * @param {boolean} isCorrect - whether the user's guess is correct
+       */
+      incrementGuesses(isCorrect) {
+        this.$emit("increment-guesses", isCorrect);
+      },
+      /**
+       * Request next question
+       */
+      getNextQuestion() {
+        this.$emit("next-question");
+      },
+      /**
+       * Sets the quiz completed status to true
+       */
+      setQuizCompleted() {
+        this.$emit("set-quiz-completed", true);
       }
     }
   }
@@ -164,6 +180,7 @@
     color: #fff;
   }
   .incorrect {
-    background: red;
+    background: #e03131;
+    color: #fff;
   }
 </style>

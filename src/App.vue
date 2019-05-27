@@ -8,10 +8,17 @@
       <b-row>
         <b-col sm="6" offset="3">
           <QuestionBox 
-            v-if="questions.length"
+            v-if="questions.length && !isQuizComplete"
+            @next-question="nextQuestion"
+            @increment-guesses="updateGuesses"
+            @set-quiz-completed="setQuizCompleted"
             :currentQuestion="questions[index]"
-            :next="next"
-            :incrementGuesses="incrementGuesses"
+          />
+          <CompletedView
+            v-if="questions.length && isQuizComplete"
+            @set-quiz-completed="setQuizCompleted"
+            :correctGuesses="correctGuesses"
+            :questionCount="questions.length"
           />
         </b-col>
       </b-row>
@@ -20,10 +27,11 @@
 </template>
 
 <script>
-import { unescape } from "lodash";
+import he from "he";
 
 import Header from './components/Header.vue';
 import QuestionBox from './components/QuestionBox.vue';
+import CompletedView from './components/CompletedView.vue';
 
 const QUESTIONS_API_ENDPOINT = "https://opentdb.com/api.php?amount=10&category=27&type=multiple";
 
@@ -31,7 +39,8 @@ export default {
   name: 'app',
   components: {
     Header,
-    QuestionBox
+    QuestionBox,
+    CompletedView
   },
   data() {
     return {
@@ -42,25 +51,34 @@ export default {
       // count of correct answers
       correctGuesses: 0,
       // count of total guesses
-      totalGuesses: 0
+      totalGuesses: 0,
+      // completed status of quiz
+      isQuizComplete: false
     }
   },
   methods: {
     /**
      * Set the current question index to the next index
      */
-    next() {
+    nextQuestion() {
       this.index++;
     },
     /**
      * Increments the user's total guesses and correct guesses
      * @param {boolean} isCorrect - whether the submitted answer is correct
      */
-    incrementGuesses(isCorrect) {
+    updateGuesses(isCorrect) {
       if (isCorrect) {
         this.correctGuesses++;
       }
       this.totalGuesses++;
+    },
+    /**
+     * Updates status of isQuizComplete
+     * @param {boolean} status - status to set isQuizComplete to
+     */
+    setQuizCompleted(status) {
+      this.isQuizComplete = status;
     }
   },
   mounted() {
@@ -77,7 +95,7 @@ export default {
       const decodedQuestions = jsonData.results.map(result => (
         {
           ...result,
-          question: unescape(result.question)
+          question: he.unescape(result.question)
         }
       ));
       // set decoded questions into state
